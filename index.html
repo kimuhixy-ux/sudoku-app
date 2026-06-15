@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <!--
+    viewport-fit=cover : iPhoneのノッチ/ホームバー部分まで画面全体を使う設定。
+    maximum-scale=1, user-scalable=no : ピンチ操作での拡大縮小を禁止（誤操作防止）。
+  -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>ナンプレ</title>
+
+  <!-- PWA: ホーム画面に追加したときの見た目の設定 -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#1b1f2a" />
+  <!-- iPhoneでホーム画面に追加したとき、ブラウザのアドレスバーを隠してフルスクリーン表示にする -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="ナンプレ" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+  <link rel="icon" href="icons/icon-192.png" />
+
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- 上部バー: 難易度選択・新規ゲーム・タイマー -->
+    <header class="topbar">
+      <select id="difficulty-select" aria-label="難易度">
+        <option value="easy">易</option>
+        <option value="medium">中</option>
+        <option value="hard" selected>難</option>
+        <option value="extreme">鬼</option>
+      </select>
+      <button id="new-game-btn" class="topbar-btn">新規</button>
+      <div class="spacer"></div>
+      <div id="timer" class="timer">00:00</div>
+    </header>
+
+    <!-- 数独の9x9盤面 -->
+    <main class="board-wrap">
+      <div id="board" class="board"></div>
+
+      <!-- パズル生成中・クリア時などに表示するオーバーレイ -->
+      <div id="overlay" class="overlay hidden">
+        <div class="overlay-content">
+          <p id="overlay-message"></p>
+          <button id="overlay-close" class="overlay-btn hidden">閉じる</button>
+        </div>
+      </div>
+    </main>
+
+    <!-- 操作ツールバー -->
+    <div class="toolbar">
+      <button id="undo-btn" class="tool-btn" disabled>
+        <span class="tool-icon">↶</span><span class="tool-label">戻す</span>
+      </button>
+      <button id="redo-btn" class="tool-btn" disabled>
+        <span class="tool-icon">↷</span><span class="tool-label">進む</span>
+      </button>
+      <button id="pencil-btn" class="tool-btn">
+        <span class="tool-icon">✎</span><span class="tool-label">メモ</span>
+      </button>
+      <button id="erase-btn" class="tool-btn">
+        <span class="tool-icon">⌫</span><span class="tool-label">消去</span>
+      </button>
+    </div>
+
+    <!-- 数字入力パッド -->
+    <div class="numpad" id="numpad">
+      <button class="num-btn" data-num="1">1</button>
+      <button class="num-btn" data-num="2">2</button>
+      <button class="num-btn" data-num="3">3</button>
+      <button class="num-btn" data-num="4">4</button>
+      <button class="num-btn" data-num="5">5</button>
+      <button class="num-btn" data-num="6">6</button>
+      <button class="num-btn" data-num="7">7</button>
+      <button class="num-btn" data-num="8">8</button>
+      <button class="num-btn" data-num="9">9</button>
+    </div>
+  </div>
+
+  <script src="js/sudoku-engine.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

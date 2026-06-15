@@ -1,0 +1,282 @@
+/* ===== 色やサイズなどの共通設定 ===== */
+:root {
+  --bg: #14171f;
+  --panel: #1e2330;
+  --board-bg: #262c3d;
+  --line-thin: #3a4154;
+  --line-thick: #aab4cc;
+  --text: #f3f5f9;
+  --text-dim: #9aa3b8;
+  --given-text: #e9ecf5;
+  --user-text: #6ea8ff;
+  --selected: #3a5a8c;
+  --peer: #2a3450;
+  --same-number: #3d5a3d;
+  --conflict-bg: #6b2a35;
+  --conflict-text: #ff8a8a;
+  --accent: #4f8cff;
+  --accent-text: #ffffff;
+  --btn-bg: #2a3145;
+  --btn-bg-active: #3a4566;
+  --note-text: #8a93ad;
+}
+
+/* ===== 全体のリセットと誤操作防止 ===== */
+* {
+  box-sizing: border-box;
+  /* タップ時に出る青いハイライトを消す */
+  -webkit-tap-highlight-color: transparent;
+  /* テキスト選択を禁止（長押しでのコピー操作などを防ぐ） */
+  -webkit-user-select: none;
+  user-select: none;
+  /* ダブルタップでの拡大を禁止 */
+  touch-action: manipulation;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, "Hiragino Sans", "Hiragino Kaku Gothic ProN", sans-serif;
+  overscroll-behavior: none; /* 画面の引っ張りすぎ（バウンス）を抑える */
+}
+
+/* ===== 全体レイアウト ===== */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  /* iPhoneのノッチ・ホームバーに重ならないようにする */
+  padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right))
+    max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+  gap: 8px;
+}
+
+/* ===== 上部バー ===== */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.topbar select,
+.topbar-btn {
+  font-size: 16px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line-thin);
+  background: var(--panel);
+  color: var(--text);
+  min-height: 40px;
+}
+
+.topbar-btn {
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.timer {
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+  font-weight: bold;
+  padding: 8px 12px;
+  background: var(--panel);
+  border-radius: 8px;
+  min-width: 80px;
+  text-align: center;
+}
+
+/* ===== 盤面エリア ===== */
+.board-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 0;
+}
+
+.board {
+  width: min(96vw, 92vh, 520px);
+  aspect-ratio: 1 / 1;
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  grid-template-rows: repeat(9, 1fr);
+  background: var(--line-thick);
+  border: 2px solid var(--line-thick);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.cell {
+  background: var(--board-bg);
+  border: 1px solid var(--line-thin);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-size: min(6.5vw, 32px);
+  font-weight: 600;
+  color: var(--user-text);
+  cursor: pointer;
+}
+
+/* 3x3ブロックの区切り線を太くする */
+.cell.block-right {
+  border-right: 2px solid var(--line-thick);
+}
+.cell.block-bottom {
+  border-bottom: 2px solid var(--line-thick);
+}
+
+/* 最初から入っているヒント数字（編集不可） */
+.cell.given {
+  color: var(--given-text);
+  font-weight: 700;
+}
+
+/* 選択中のセル */
+.cell.selected {
+  background: var(--selected);
+}
+
+/* 選択中セルと同じ行・列・ブロック */
+.cell.peer {
+  background: var(--peer);
+}
+
+/* 選択中セルと同じ数字 */
+.cell.same-number {
+  background: var(--same-number);
+}
+
+/* ルール違反（重複） */
+.cell.conflict {
+  background: var(--conflict-bg);
+  color: var(--conflict-text);
+}
+.cell.conflict.given {
+  color: var(--conflict-text);
+}
+
+/* ===== 候補メモ（鉛筆書き） ===== */
+.notes {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+}
+.notes span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: min(2.4vw, 12px);
+  font-weight: 400;
+  color: var(--note-text);
+}
+
+/* ===== オーバーレイ（生成中・クリア表示） ===== */
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 12, 18, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+.overlay.hidden {
+  display: none;
+}
+.overlay-content {
+  text-align: center;
+  padding: 24px;
+}
+.overlay-content p {
+  font-size: 20px;
+  font-weight: bold;
+  margin: 0 0 16px;
+  white-space: pre-line;
+}
+.overlay-btn {
+  font-size: 16px;
+  padding: 10px 24px;
+  border-radius: 8px;
+  border: none;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: bold;
+}
+.overlay-btn.hidden {
+  display: none;
+}
+
+/* ===== ツールバー（戻す・進む・メモ・消去） ===== */
+.toolbar {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.tool-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 52px;
+  border-radius: 10px;
+  border: 1px solid var(--line-thin);
+  background: var(--btn-bg);
+  color: var(--text);
+}
+.tool-btn:disabled {
+  opacity: 0.35;
+}
+.tool-btn.active {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-color: var(--accent);
+}
+.tool-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+.tool-label {
+  font-size: 11px;
+  line-height: 1;
+}
+
+/* ===== 数字入力パッド ===== */
+.numpad {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 6px;
+  flex-shrink: 0;
+}
+.num-btn {
+  aspect-ratio: 1 / 1;
+  min-height: 40px;
+  font-size: clamp(16px, 5vw, 26px);
+  font-weight: 700;
+  border-radius: 10px;
+  border: 1px solid var(--line-thin);
+  background: var(--btn-bg);
+  color: var(--text);
+}
+.num-btn:active,
+.tool-btn:active {
+  background: var(--btn-bg-active);
+}
+
+/* 数字を使い切った（盤面に9個揃った）ボタンを薄くする */
+.num-btn.used {
+  opacity: 0.3;
+}
