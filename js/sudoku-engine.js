@@ -911,6 +911,48 @@
   const LEVELS = ["easy", "medium", "hard", "extreme"];
   const LEVEL_LABEL = { easy: "易", medium: "中", hard: "難", extreme: "鬼" };
 
+  // テクニック名の日本語表示用
+  const TECHNIQUE_LABEL = {
+    "Naked Single": "ネイキッドシングル（候補がひとつだけ）",
+    "Hidden Single": "ヒドゥンシングル（この数字が入れる場所がここだけ）",
+    Pointing: "ポインティング",
+    Claiming: "クレーミング",
+    "Naked Pair": "ネイキッドペア",
+    "Hidden Pair": "ヒドゥンペア",
+    "Naked Triple": "ネイキッドトリプル",
+    "Hidden Triple": "ヒドゥントリプル",
+    "X-Wing": "X-Wing",
+    Swordfish: "Swordfish",
+    "Simple Coloring": "シンプルカラーリング",
+    "Unique Rectangle": "ユニークレクタングル",
+    "XY-Wing": "XY-Wing",
+    "XY-Chain": "XY-チェーン",
+    "Forcing Chain": "フォーシングチェーン",
+  };
+
+  // ===== ヒント機能 =====
+  // 与えられた盤面から、論理的なテクニックを順番に適用していき、
+  // 実際に数字がひとつ確定するまで進める（候補を消すだけのテクニックは
+  // 途中経過として扱い、最終的にどのマスに何が入るかとその理由を返す）
+  function nextFill(board) {
+    const grid = board.slice();
+    const cand = computeCandidates(grid);
+
+    for (let i = 0; i < 500; i++) {
+      const before = grid.slice();
+      const result = applyBasicTechniques(grid, cand) || applyForcingChain(grid, cand);
+      if (!result) return null; // 論理的に手詰まり
+
+      for (let c = 0; c < 81; c++) {
+        if (before[c] === 0 && grid[c] !== 0) {
+          return { cell: c, value: grid[c], technique: result.name, level: result.level };
+        }
+      }
+      // このステップは候補を消しただけなので、続けて次のテクニックを試す
+    }
+    return null;
+  }
+
   function rateDifficulty(board) {
     const { solved, steps } = logicalSolve(board);
     if (!solved) {
@@ -1007,6 +1049,7 @@
     PEERS,
     LEVELS,
     LEVEL_LABEL,
+    TECHNIQUE_LABEL,
     shuffle,
     isValidPlacement,
     generateSolvedBoard,
@@ -1015,6 +1058,7 @@
     logicalSolve,
     rateDifficulty,
     generatePuzzle,
+    nextFill,
   };
 
   if (typeof module !== "undefined" && module.exports) {

@@ -36,6 +36,9 @@
       <div id="timer" class="timer">00:00</div>
     </header>
 
+    <!-- ヒントの内容を表示する吹き出し -->
+    <div id="hint-toast" class="hint-toast hidden"></div>
+
     <!-- 数独の9x9盤面 -->
     <main class="board-wrap">
       <div id="board" class="board"></div>
@@ -62,6 +65,9 @@
       </button>
       <button id="erase-btn" class="tool-btn">
         <span class="tool-icon">⌫</span><span class="tool-label">消去</span>
+      </button>
+      <button id="hint-btn" class="tool-btn">
+        <span class="tool-icon">💡</span><span class="tool-label">ヒント</span>
       </button>
     </div>
 

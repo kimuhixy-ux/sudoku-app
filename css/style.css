@@ -254,6 +254,21 @@ html, body {
   line-height: 1;
 }
 
+/* ===== ヒントの吹き出し ===== */
+.hint-toast {
+  flex-shrink: 0;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+.hint-toast.hidden {
+  display: none;
+}
+
 /* ===== 数字入力パッド ===== */
 .numpad {
   display: grid;

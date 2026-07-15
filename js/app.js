@@ -18,11 +18,14 @@
   const redoBtn = document.getElementById("redo-btn");
   const pencilBtn = document.getElementById("pencil-btn");
   const eraseBtn = document.getElementById("erase-btn");
+  const hintBtn = document.getElementById("hint-btn");
+  const hintToast = document.getElementById("hint-toast");
   const numpad = document.getElementById("numpad");
 
   let state = null; // 現在のゲームの状態をまとめて持つオブジェクト
   let cellEls = []; // 81個のマスのDOM要素
   let timerInterval = null;
+  let hintToastTimer = null;
 
   // ----- 盤面のマスを81個作る（最初に1回だけ実行） -----
   function buildBoardDOM() {
@@ -298,6 +301,57 @@
     afterChange();
   }
 
+  // ----- 吹き出しでメッセージを一時的に表示する -----
+  function showHintToast(message) {
+    hintToast.textContent = message;
+    hintToast.classList.remove("hidden");
+    clearTimeout(hintToastTimer);
+    hintToastTimer = setTimeout(() => {
+      hintToast.classList.add("hidden");
+    }, 3200);
+  }
+
+  // ----- ヒントボタン -----
+  // 選択中のマスがあればそのマスを、なければ論理的に埋められる中で
+  // 一番わかりやすい（易しいテクニックで解ける）マスを選んで、正解の数字を埋める
+  function onHint() {
+    if (!state || state.solved) return;
+
+    let target = state.selected;
+    if (target === null || state.given[target] || state.board[target] === state.solution[target]) {
+      target = null;
+    }
+
+    // 間違って埋めているマスは無視して、論理的に次の一手を考える
+    const hintBoard = state.board.map((v, i) => (v !== 0 && v === state.solution[i] ? v : 0));
+    if (!hintBoard.includes(0)) return;
+
+    let technique = null;
+    if (target === null) {
+      const step = Sudoku.nextFill(hintBoard);
+      if (step) {
+        target = step.cell;
+        technique = step.technique;
+      } else {
+        target = hintBoard.findIndex((v) => v === 0);
+      }
+    }
+
+    pushHistory();
+    const d = state.solution[target];
+    state.board[target] = d;
+    state.notes[target] = 0;
+    for (const p of Sudoku.PEERS[target]) {
+      state.notes[p] &= ~(1 << (d - 1));
+    }
+    state.selected = target;
+
+    afterChange();
+
+    const label = technique ? Sudoku.TECHNIQUE_LABEL[technique] || technique : null;
+    showHintToast(label ? `ヒント: ${label} でこのマスが埋まります` : "ヒント: このマスに数字を入れました");
+  }
+
   // ----- メモモードの切り替え -----
   function onTogglePencil() {
     if (!state) return;
@@ -357,6 +411,7 @@
     redoBtn.addEventListener("click", redo);
     pencilBtn.addEventListener("click", onTogglePencil);
     eraseBtn.addEventListener("click", onErase);
+    hintBtn.addEventListener("click", onHint);
     newGameBtn.addEventListener("click", () => startNewGame(difficultySelect.value));
     overlayClose.addEventListener("click", hideOverlay);
     document.addEventListener("keydown", onKeyDown);
