@@ -25,7 +25,6 @@
   let state = null; // 現在のゲームの状態をまとめて持つオブジェクト
   let cellEls = []; // 81個のマスのDOM要素
   let timerInterval = null;
-  let hintToastTimer = null;
 
   // ----- 盤面のマスを81個作る（最初に1回だけ実行） -----
   function buildBoardDOM() {
@@ -301,14 +300,100 @@
     afterChange();
   }
 
-  // ----- 吹き出しでメッセージを一時的に表示する -----
-  function showHintToast(message) {
-    hintToast.textContent = message;
-    hintToast.classList.remove("hidden");
-    clearTimeout(hintToastTimer);
-    hintToastTimer = setTimeout(() => {
-      hintToast.classList.add("hidden");
-    }, 3200);
+  // ----- ヒントの解説文づくり -----
+  // マス番号だと初心者に場所が伝わらないので、「上から何行目・左から何列目」で言う
+  function cellPositionText(i) {
+    return `上から${Math.floor(i / 9) + 1}行目・左から${(i % 9) + 1}列目`;
+  }
+
+  // 解き方の名前とひとこと説明を1行にまとめる
+  function techniqueLine(name) {
+    const label = Sudoku.TECHNIQUE_LABEL[name] || name;
+    const desc = Sudoku.TECHNIQUE_DESCRIPTION[name];
+    return desc ? `【${label}】${desc}` : `【${label}】`;
+  }
+
+  // 今の盤面だけを見て、そのマスが「シングル」で決まる具体的な理由を探す
+  // （見た目どおりの盤面で説明できるので、初心者でも自分で確かめられる）
+  function findSingleReason(board, cell, d) {
+    const cand = Sudoku.computeCandidates(board);
+    const bit = 1 << (d - 1);
+    if (cand[cell] === bit) {
+      return { technique: 'Naked Single', detail: `このマスと同じ行・列・ブロックには ${d} 以外の数字がすべて出ているので、入れられるのは ${d} だけです。` };
+    }
+    const units = [
+      ['行（横の並び）', Sudoku.ROWS[Math.floor(cell / 9)]],
+      ['列（縦の並び）', Sudoku.COLS[cell % 9]],
+      ['ブロック', Sudoku.BOXES[Sudoku.BOX_OF[cell]]],
+    ];
+    for (const [unitName, unit] of units) {
+      const spots = unit.filter((c) => board[c] === 0 && cand[c] & bit);
+      if (spots.length === 1) {
+        return { technique: 'Hidden Single', detail: `この${unitName}の中で ${d} を入れられるマスはここだけです。ほかの空きマスは、同じ行・列・ブロックにすでに ${d} があるため入れられません。` };
+      }
+    }
+    return null;
+  }
+
+  // 候補を減らす手順をはさんでから決まる場合の説明
+  function explainLogicStep(step) {
+    const lines = [];
+    if (step.preSteps.length > 0) {
+      lines.push('まず、次の解き方で候補を減らします。');
+      for (const name of step.preSteps) lines.push(`・${techniqueLine(name)}`);
+      lines.push('候補が減った結果、次の解き方でこのマスが決まります。');
+    }
+    lines.push(techniqueLine(step.technique));
+    return lines;
+  }
+
+  // ヒントの見出しと解説の各行を作る
+  function buildHintExplanation(board, target, d, step, fromSelection) {
+    const title = `ヒント: ${cellPositionText(target)}に ${d} が入ります`;
+    let lines;
+    const single = !step || step.preSteps.length === 0 ? findSingleReason(board, target, d) : null;
+    if (single) {
+      lines = [techniqueLine(single.technique), single.detail];
+    } else if (step) {
+      lines = explainLogicStep(step);
+    } else if (fromSelection) {
+      lines = [
+        '選んだマスは、今の盤面からはまだすぐには決まらないため、答えだけを入れました。',
+        '理由つきのヒントを見たいときは、数字の入っているマスを選んでからヒントを押してください。',
+      ];
+    } else {
+      lines = ['このアプリが知っている解き方では次の一手が見つからなかったため、答えを1つ入れました。'];
+    }
+    lines.push('※ブロック＝太線で囲まれた3×3の枠、候補＝そのマスに入る可能性のある数字');
+    return { title, lines };
+  }
+
+  // ----- 解説の吹き出しを表示する -----
+  // 解説は長めなので自動では消さず、タップで閉じるまで読めるようにする。
+  // 答えのマスが隠れないよう、マスが上半分なら盤面の下側、下半分なら上側に出す
+  function showHintToast({ title, lines }, target) {
+    hintToast.replaceChildren();
+    const titleEl = document.createElement('p');
+    titleEl.className = 'hint-title';
+    titleEl.textContent = title;
+    hintToast.appendChild(titleEl);
+    for (const line of lines) {
+      const lineEl = document.createElement('p');
+      lineEl.className = 'hint-line';
+      lineEl.textContent = line;
+      hintToast.appendChild(lineEl);
+    }
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'hint-close';
+    closeBtn.textContent = '閉じる';
+    hintToast.appendChild(closeBtn);
+    hintToast.classList.toggle('at-bottom', Math.floor(target / 9) < 5);
+    hintToast.classList.remove('hidden');
+    hintToast.scrollTop = 0;
+  }
+
+  function hideHintToast() {
+    hintToast.classList.add('hidden');
   }
 
   // ----- ヒントボタン -----
@@ -321,17 +406,17 @@
     if (target === null || state.given[target] || state.board[target] === state.solution[target]) {
       target = null;
     }
+    const fromSelection = target !== null;
 
     // 間違って埋めているマスは無視して、論理的に次の一手を考える
     const hintBoard = state.board.map((v, i) => (v !== 0 && v === state.solution[i] ? v : 0));
     if (!hintBoard.includes(0)) return;
 
-    let technique = null;
+    let step = null;
     if (target === null) {
-      const step = Sudoku.nextFill(hintBoard);
+      step = Sudoku.nextFill(hintBoard);
       if (step) {
         target = step.cell;
-        technique = step.technique;
       } else {
         target = hintBoard.findIndex((v) => v === 0);
       }
@@ -348,8 +433,7 @@
 
     afterChange();
 
-    const label = technique ? Sudoku.TECHNIQUE_LABEL[technique] || technique : null;
-    showHintToast(label ? `ヒント: ${label} でこのマスが埋まります` : "ヒント: このマスに数字を入れました");
+    showHintToast(buildHintExplanation(hintBoard, target, d, step, fromSelection), target);
   }
 
   // ----- メモモードの切り替え -----
@@ -365,6 +449,8 @@
     // 生成には少し時間がかかることがあるので、
     // 先に「生成中…」を表示してから処理を始める
     showOverlay("生成中…", false);
+    // 前のパズルの解説が残っていると混乱するので閉じておく
+    hideHintToast();
     setTimeout(() => {
       const generated = Sudoku.generatePuzzle(difficulty);
       state = newGameState(difficulty, generated);
@@ -412,6 +498,8 @@
     pencilBtn.addEventListener("click", onTogglePencil);
     eraseBtn.addEventListener("click", onErase);
     hintBtn.addEventListener("click", onHint);
+    // 吹き出しのどこをタップしても閉じられるようにする（閉じるボタンが小さく感じても困らないように）
+    hintToast.addEventListener('click', hideHintToast);
     newGameBtn.addEventListener("click", () => startNewGame(difficultySelect.value));
     overlayClose.addEventListener("click", hideOverlay);
     document.addEventListener("keydown", onKeyDown);

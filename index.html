@@ -36,12 +36,12 @@
       <div id="timer" class="timer">00:00</div>
     </header>
 
-    <!-- ヒントの内容を表示する吹き出し -->
-    <div id="hint-toast" class="hint-toast hidden"></div>
-
     <!-- 数独の9x9盤面 -->
     <main class="board-wrap">
       <div id="board" class="board"></div>
+
+      <!-- ヒントの解説を表示する吹き出し（盤面に重ねて出し、盤面の大きさを変えない） -->
+      <div id="hint-toast" class="hint-toast hidden" role="status"></div>
 
       <!-- パズル生成中・クリア時などに表示するオーバーレイ -->
       <div id="overlay" class="overlay hidden">

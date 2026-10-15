@@ -913,8 +913,8 @@
 
   // テクニック名の日本語表示用
   const TECHNIQUE_LABEL = {
-    "Naked Single": "ネイキッドシングル（候補がひとつだけ）",
-    "Hidden Single": "ヒドゥンシングル（この数字が入れる場所がここだけ）",
+    'Naked Single': 'ネイキッドシングル',
+    'Hidden Single': 'ヒドゥンシングル',
     Pointing: "ポインティング",
     Claiming: "クレーミング",
     "Naked Pair": "ネイキッドペア",
@@ -930,6 +930,26 @@
     "Forcing Chain": "フォーシングチェーン",
   };
 
+  // 初心者向けのひとこと説明（ヒントの解説に添える）
+  // 名前だけでは意味が伝わらないため、「何を見て何がわかるか」を短く書いている
+  const TECHNIQUE_DESCRIPTION = {
+    'Naked Single': 'そのマスに入れられる数字（候補）が1つしか残っていない。',
+    'Hidden Single': 'ある行・列・ブロックの中で、その数字を入れられるマスが1か所しかない。',
+    Pointing: 'ブロックの中で、ある数字の候補が1本の行（または列）にだけ並んでいるとき、その行（列）のブロックの外のマスからはその数字を消せる。',
+    Claiming: '行（または列）の中で、ある数字の候補が1つのブロックの中にしかないとき、そのブロックのほかのマスからはその数字を消せる。',
+    'Naked Pair': '同じ行・列・ブロックの2マスの候補が、同じ2つの数字だけのとき、その2つの数字はその2マスで使い切るので、ほかのマスからは消せる。',
+    'Hidden Pair': 'ある2つの数字を入れられる場所が同じ2マスしかないとき、その2マスにはほかの数字は入らない。',
+    'Naked Triple': 'ネイキッドペアの3つ版。3マスの候補を合わせても3つの数字しかないとき、ほかのマスからその3つを消せる。',
+    'Hidden Triple': 'ヒドゥンペアの3つ版。3つの数字を入れられる場所が同じ3マスしかないとき、その3マスにはほかの数字は入らない。',
+    'X-Wing': 'ある数字の候補が、2本の行でちょうど同じ2列にだけあるとき、その2列のほかのマスからその数字を消せる（行と列を入れかえても同じ）。',
+    Swordfish: 'X-Wingの3本版。3本の行で、ある数字の候補が同じ3列の中にしかないとき、その3列のほかのマスからその数字を消せる。',
+    'Simple Coloring': 'ある数字について「どちらか一方に必ず入る」2マスの組をつないで2色に塗り分け、矛盾が出る色の側から候補を消す。',
+    'Unique Rectangle': '答えが1通りのナンプレでは、4マスが同じ2つの候補だけの長方形はありえないので、そうならないように候補を消す。',
+    'XY-Wing': '候補が2つずつの3マス（中心の1マスと2つの羽）の関係から、両方の羽と同じ行・列・ブロックにあるマスの候補を消す。',
+    'XY-Chain': '候補が2つずつのマスを鎖のようにつなぎ、鎖の両端のどちらかに必ず入る数字を、両端と同じ行・列・ブロックにあるマスから消す。',
+    'Forcing Chain': 'あるマスに入りうる数字を1つずつ仮に置いて先まで調べ、どの場合でも同じ結果になる（または矛盾する）ことから答えを決める。',
+  };
+
   // ===== ヒント機能 =====
   // 与えられた盤面から、論理的なテクニックを順番に適用していき、
   // 実際に数字がひとつ確定するまで進める（候補を消すだけのテクニックは
@@ -937,6 +957,8 @@
   function nextFill(board) {
     const grid = board.slice();
     const cand = computeCandidates(grid);
+    // 解説で「どの解き方で候補を減らしたか」を伝えるため、確定前に使ったテクニックを順に記録する
+    const preSteps = [];
 
     for (let i = 0; i < 500; i++) {
       const before = grid.slice();
@@ -945,10 +967,11 @@
 
       for (let c = 0; c < 81; c++) {
         if (before[c] === 0 && grid[c] !== 0) {
-          return { cell: c, value: grid[c], technique: result.name, level: result.level };
+          return { cell: c, value: grid[c], technique: result.name, level: result.level, preSteps };
         }
       }
       // このステップは候補を消しただけなので、続けて次のテクニックを試す
+      if (!preSteps.includes(result.name)) preSteps.push(result.name);
     }
     return null;
   }
@@ -1050,6 +1073,7 @@
     LEVELS,
     LEVEL_LABEL,
     TECHNIQUE_LABEL,
+    TECHNIQUE_DESCRIPTION,
     shuffle,
     isValidPlacement,
     generateSolvedBoard,

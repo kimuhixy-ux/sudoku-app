@@ -1,6 +1,6 @@
 // オフラインでも使えるようにするためのキャッシュ設定。
 // バージョン番号を変えると、古いキャッシュが削除され新しいファイルに更新される。
-const CACHE_NAME = "sudoku-cache-v1";
+const CACHE_NAME = 'sudoku-cache-v2';
 
 const ASSETS = [
   "./",
